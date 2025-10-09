@@ -34,66 +34,45 @@ const FileUpload: React.FC<FileUploadProps> = ({ schema, onProcess }) => {
 
   const processFiles = async () => {
     if (files.length === 0) return;
-    
     setProcessing(true);
-    const results: any[] = [];
-    
-    for (let fileObj of files) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockResult = {
-        fileId: fileObj.id,
-        fileName: fileObj.name,
-        extractedData: {} as any,
-        validationResults: {} as any,
-        status: 'completed',
-        timestamp: new Date().toISOString()
-      };
 
-      schema.fields.forEach((field: any) => {
-        let mockValue: any;
-        switch (field.type) {
-          case 'number':
-          case 'currency':
-            mockValue = (Math.random() * 10000).toFixed(2);
-            break;
-          case 'date':
-            mockValue = new Date().toISOString().split('T')[0];
-            break;
-          case 'email':
-            mockValue = 'vendor@example.com';
-            break;
-          case 'array':
-            mockValue = ['Item 1', 'Item 2', 'Item 3'];
-            break;
-          default:
-            mockValue = `Sample ${field.name.replace(/_/g, ' ')}`;
-        }
-        
-        mockResult.extractedData[field.name] = mockValue;
-        
-        if (field.validation) {
-          const isValid = Math.random() > 0.2;
-          mockResult.validationResults[field.name] = {
-            valid: isValid,
-            message: isValid ? 'Validation passed' : 'Validation failed'
-          };
-        } else {
-          mockResult.validationResults[field.name] = {
-            valid: true,
-            message: 'No validation defined'
-          };
-        }
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
+      const formData = new FormData();
+      formData.append('schemaId', schema.id);
+      files.forEach(f => formData.append('invoices', f.file));
+
+      const res = await fetch('/api/invoices/upload', {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: formData
       });
 
-      results.push(mockResult);
-      setFiles(prev => prev.map(f => 
-        f.id === fileObj.id ? { ...f, status: 'completed' } : f
-      ));
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      // Until a polling UI is added, reflect queued state locally
+      const uploaded = files.map((fileObj) => ({
+        fileId: fileObj.id,
+        fileName: fileObj.name,
+        extractedData: {},
+        validationResults: {},
+        status: 'queued',
+        timestamp: new Date().toISOString()
+      }));
+
+      setFiles(prev => prev.map(f => ({ ...f, status: 'queued' })));
+      onProcess(uploaded);
+    } catch (e) {
+      console.error(e);
+      alert((e as any).message || 'Failed to upload files');
+    } finally {
+      setProcessing(false);
     }
-    
-    setProcessing(false);
-    onProcess(results);
   };
 
   return (

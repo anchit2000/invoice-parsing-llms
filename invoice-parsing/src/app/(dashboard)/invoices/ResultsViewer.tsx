@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Eye, Edit2 } from 'lucide-react';
+import { FileText, Eye } from 'lucide-react';
 import ExportButton from './ExportButton';
 
 interface ResultsViewerProps {
@@ -45,13 +45,28 @@ const ResultsViewer: React.FC<ResultsViewerProps> = ({ results, schema }) => {
               <div className="p-4">
                 <h4 className="font-semibold text-gray-800 mb-3">Extracted Data</h4>
                 <div className="grid gap-2">
-                  {Object.entries(result.extractedData).map(([key, value]) => (
+                  {Object.entries(result.extractedData || {}).map(([key, value]) => (
                     <div key={key} className="flex justify-between py-2 border-b border-gray-100">
                       <span className="font-medium text-gray-600">{key}:</span>
                       <span className="text-gray-800">{String(value)}</span>
                     </div>
                   ))}
                 </div>
+                {result.validationResults && (
+                  <div className="mt-6">
+                    <h5 className="font-semibold text-gray-800 mb-2">Validation</h5>
+                    <div className="grid gap-2">
+                      {Object.entries(result.validationResults).map(([key, val]: any) => (
+                        <div key={key} className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="font-medium text-gray-600">{key}:</span>
+                          <span className={val.valid ? 'text-green-700' : 'text-red-700'}>
+                            {val.valid ? 'Valid' : 'Invalid'}{val.message ? ` — ${val.message}` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

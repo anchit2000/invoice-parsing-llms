@@ -8,6 +8,8 @@ interface SchemaBuilderProps {
 const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ onSave }) => {
   const [schemaName, setSchemaName] = useState('');
   const [fields, setFields] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const addField = () => {
     setFields([...fields, {
@@ -29,15 +31,47 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ onSave }) => {
     setFields(fields.filter((_, i) => i !== index));
   };
 
-  const saveSchema = () => {
+  const saveSchema = async () => {
     if (!schemaName || fields.length === 0) return;
-    
+    setSaving(true);
+    setError(null);
+
     const schema = {
       name: schemaName,
-      fields: fields.filter(f => f.name.trim() !== '')
+      fields: fields
+        .filter(f => f.name.trim() !== '')
+        .map(f => ({
+          name: f.name,
+          description: f.description,
+          type: f.type,
+          required: !!f.required,
+          validation: f.validation || ''
+        }))
     };
-    
-    onSave(schema);
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
+      const res = await fetch('/api/schemas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(schema)
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create schema');
+      }
+
+      // Pass back the created schema with id to parent
+      onSave(data.data);
+    } catch (e: any) {
+      setError(e.message || 'Failed to save schema');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -115,6 +149,19 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ onSave }) => {
                   placeholder="e.g., Invoice number from the document"
                 />
               </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Validation (JS snippet)
+                </label>
+                <textarea
+                  value={field.validation || ''}
+                  onChange={(e) => updateField(index, { ...field, validation: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Example: value && value.length > 3"
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">The snippet runs in a sandbox with a variable named <code>value</code>.</p>
+              </div>
               <div className="flex justify-between items-center">
                 <label className="flex items-center gap-2">
                   <input
@@ -137,12 +184,15 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ onSave }) => {
         </div>
       </div>
 
+      {error && (
+        <p className="text-sm text-red-600 mb-2">{error}</p>
+      )}
       <button
         onClick={saveSchema}
-        disabled={!schemaName || fields.length === 0}
+        disabled={saving || !schemaName || fields.length === 0}
         className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
-        Save Schema
+        {saving ? 'Saving…' : 'Save Schema'}
       </button>
     </div>
   );

@@ -19,3 +19,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Make text inside form fields darker for better readability */
+input, select, textarea {
+  color: #111827; /* Tailwind gray-900 */
+}
+
+/* Optional: slightly darker placeholder for contrast */
+input::placeholder, textarea::placeholder {
+  color: #4b5563; /* Tailwind gray-600 */
+}
