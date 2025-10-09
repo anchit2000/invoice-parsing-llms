@@ -55,17 +55,19 @@ const FileUpload: React.FC<FileUploadProps> = ({ schema, onProcess }) => {
         throw new Error(data.error || 'Upload failed');
       }
 
-      // Until a polling UI is added, reflect queued state locally
-      const uploaded = files.map((fileObj) => ({
-        fileId: fileObj.id,
-        fileName: fileObj.name,
-        extractedData: {},
-        validationResults: {},
-        status: 'queued',
+      // Use synchronous processed results directly
+      const uploaded = (data.processed || []).map((p: any) => ({
+        fileId: p.invoiceId,
+        fileName: p.fileName,
+        extractedData: p.extractedData,
+        validationResults: Object.fromEntries(
+          (p.validation?.results || []).map((vr: any) => [vr.fieldName, { valid: vr.isValid, message: vr.message }])
+        ),
+        status: 'completed',
         timestamp: new Date().toISOString()
       }));
 
-      setFiles(prev => prev.map(f => ({ ...f, status: 'queued' })));
+      setFiles(prev => prev.map(f => ({ ...f, status: 'completed' })));
       onProcess(uploaded);
     } catch (e) {
       console.error(e);

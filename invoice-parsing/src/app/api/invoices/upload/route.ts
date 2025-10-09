@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Bull from 'bull';
 import auth from '@/middleware/auth';
 import { db, logger } from '@/lib/db';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import pdfProcessor from '@/services/pdfProcessor';
+import llmExtractor from '@/services/llmExtractor';
+import validator from '@/services/validator';
 
-// --- Bull queue setup ---
-const processingQueue = new Bull('invoice-processing', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379')
-  }
-});
+// Synchronous processing (no queue)
 
 // --- Define POST handler ---
 export const POST = auth(async (req) => {
@@ -49,7 +45,7 @@ export const POST = auth(async (req) => {
     }
 
     const schema = schemaResult.rows[0];
-    const jobs = [];
+    const processed: any[] = [];
 
     // Create upload directory if it doesn't exist
     const uploadDir = process.env.UPLOAD_DIR || './uploads';
@@ -66,28 +62,70 @@ export const POST = auth(async (req) => {
       // Save file to disk
       await fs.writeFile(filePath, Buffer.from(fileBuffer));
 
-      const job = await processingQueue.add({
-        userId: req.user.id,
-        schemaId: schema.id,
-        schema,
-        filePath,
-        fileName: file.name,
-        fileSize: file.size,
-        fileHash
-      });
+      // Process PDF -> images
+      const pdfData = await pdfProcessor.processPDF(filePath, file.name);
+      // Insert invoice row (status processing)
+      const invoiceResult = await db.query(
+        `INSERT INTO invoices (schema_id, file_name, file_size, file_hash, storage_path, pages_count, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [schema.id, file.name, file.size, pdfData.fileHash, filePath, pdfData.totalPages, 'processing']
+      );
+      const invoice = invoiceResult.rows[0];
 
-      jobs.push({
-        jobId: job.id,
+      // LLM extraction
+      const imagePaths = pdfData.pages.map((p: any) => p.enhancedPath);
+      const extraction = await llmExtractor.retryExtraction(schema, imagePaths);
+
+      // Validation
+      const validation = await validator.validateAllFields(extraction.data, schema);
+
+      // Persist extraction
+      const resultInsert = await db.query(
+        `INSERT INTO extraction_results 
+         (invoice_id, extracted_data, validation_results, llm_model, llm_prompt_tokens, llm_completion_tokens, confidence_score)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         RETURNING *`,
+        [
+          invoice.id,
+          JSON.stringify(extraction.data),
+          JSON.stringify(validation),
+          extraction.metadata.model,
+          extraction.metadata.promptTokens,
+          extraction.metadata.completionTokens,
+          extraction.metadata.confidence
+        ]
+      );
+
+      // Validation logs
+      for (const vr of validation.results) {
+        await db.query(
+          `INSERT INTO validation_logs (extraction_result_id, field_name, validation_code, is_valid, error_message)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            resultInsert.rows[0].id,
+            vr.fieldName,
+            schema.fields.find((f: any) => f.name === vr.fieldName)?.validation || null,
+            vr.isValid,
+            vr.message
+          ]
+        );
+      }
+
+      // Mark invoice complete and cleanup
+      await db.query(`UPDATE invoices SET status = $1, processed_at = CURRENT_TIMESTAMP WHERE id = $2`, ['completed', invoice.id]);
+      await pdfProcessor.cleanup(pdfData.fileHash);
+
+      processed.push({
+        invoiceId: invoice.id,
         fileName: file.name,
-        status: 'queued'
+        extractedData: extraction.data,
+        validation,
+        extractionId: resultInsert.rows[0].id
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: `${jobs.length} invoice(s) queued for processing`,
-      jobs
-    });
+    return NextResponse.json({ success: true, processed });
   } catch (error: any) {
     logger.error('Upload error:', error);
     return NextResponse.json({ success: false, error: 'Failed to process upload' }, { status: 500 });
