@@ -1,172 +1,151 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Settings, Database, CheckCircle, XCircle, Download, Plus, Trash2, Edit2, Play, AlertCircle, Eye } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
+interface SchemaBuilderProps {
+  onSave: (schema: any) => void;
+}
 
-const SchemaBuilder = ({ onSave }) => {
-  const [fields, setFields] = useState([]);
-  const [editingField, setEditingField] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    type: 'string',
-    validation: '',
-    required: false
-  });
-
-  const fieldTypes = ['string', 'number', 'date', 'email', 'currency', 'array'];
+const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ onSave }) => {
+  const [schemaName, setSchemaName] = useState('');
+  const [fields, setFields] = useState<any[]>([]);
 
   const addField = () => {
-    if (!formData.name || !formData.description) return;
-    
-    if (editingField !== null) {
-      const updated = [...fields];
-      updated[editingField] = { ...formData, id: Date.now() };
-      setFields(updated);
-      setEditingField(null);
-    } else {
-      setFields([...fields, { ...formData, id: Date.now() }]);
-    }
-    
-    setFormData({ name: '', description: '', type: 'string', validation: '', required: false });
-    setShowForm(false);
+    setFields([...fields, {
+      name: '',
+      description: '',
+      type: 'string',
+      required: false,
+      validation: ''
+    }]);
   };
 
-  const editField = (idx) => {
-    setFormData(fields[idx]);
-    setEditingField(idx);
-    setShowForm(true);
+  const updateField = (index: number, field: any) => {
+    const newFields = [...fields];
+    newFields[index] = field;
+    setFields(newFields);
   };
 
-  const deleteField = (idx) => {
-    setFields(fields.filter((_, i) => i !== idx));
+  const removeField = (index: number) => {
+    setFields(fields.filter((_, i) => i !== index));
   };
 
   const saveSchema = () => {
-    if (fields.length === 0) {
-      alert('Please add at least one field to the schema');
-      return;
-    }
-    onSave({ fields, createdAt: new Date().toISOString() });
+    if (!schemaName || fields.length === 0) return;
+    
+    const schema = {
+      name: schemaName,
+      fields: fields.filter(f => f.name.trim() !== '')
+    };
+    
+    onSave(schema);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Schema Configuration</h2>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          <Plus size={20} />
-          Add Field
-        </button>
+      <h2 className="text-2xl font-bold text-gray-800">Define Schema</h2>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Schema Name
+        </label>
+        <input
+          type="text"
+          value={schemaName}
+          onChange={(e) => setSchemaName(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+          placeholder="e.g., Invoice Schema"
+        />
       </div>
 
-      {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">
-            {editingField !== null ? 'Edit Field' : 'New Field'}
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Field Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., invoice_number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type *
-              </label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              >
-                {fieldTypes.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe what this field represents and expected format"
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Validation JavaScript (Optional)
-              </label>
-              <textarea
-                value={formData.validation}
-                onChange={(e) => setFormData({ ...formData, validation: e.target.value })}
-                placeholder="e.g., value.length > 0 && value.match(/^INV-\d+$/)"
-                rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.required}
-                  onChange={(e) => setFormData({ ...formData, required: e.target.checked })}
-                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Required Field</span>
-              </label>
-            </div>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={addField}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              {editingField !== null ? 'Update' : 'Add'} Field
-            </button>
-            <button
-              onClick={() => {
-                setShowForm(false);
-                setEditingField(null);
-                setFormData({ name: '', description: '', type: 'string', validation: '', required: false });
-              }}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-          </div>
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Fields</h3>
+          <button
+            onClick={addField}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            <Plus size={18} />
+            Add Field
+          </button>
         </div>
-      )}
 
-      <SchemaList 
-        fields={fields} 
-        onEdit={editField} 
-        onDelete={deleteField} 
-      />
+        <div className="space-y-4">
+          {fields.map((field, index) => (
+            <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Field Name
+                  </label>
+                  <input
+                    type="text"
+                    value={field.name}
+                    onChange={(e) => updateField(index, { ...field, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., invoice_number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type
+                  </label>
+                  <select
+                    value={field.type}
+                    onChange={(e) => updateField(index, { ...field, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="string">String</option>
+                    <option value="number">Number</option>
+                    <option value="date">Date</option>
+                    <option value="email">Email</option>
+                    <option value="currency">Currency</option>
+                    <option value="array">Array</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={field.description}
+                  onChange={(e) => updateField(index, { ...field, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  placeholder="e.g., Invoice number from the document"
+                />
+              </div>
+              <div className="flex justify-between items-center">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={field.required}
+                    onChange={(e) => updateField(index, { ...field, required: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-gray-700">Required</span>
+                </label>
+                <button
+                  onClick={() => removeField(index)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {fields.length > 0 && (
-        <button
-          onClick={saveSchema}
-          className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors"
-        >
-          Save Schema & Continue
-        </button>
-      )}
+      <button
+        onClick={saveSchema}
+        disabled={!schemaName || fields.length === 0}
+        className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+      >
+        Save Schema
+      </button>
     </div>
   );
 };
+
+export default SchemaBuilder;

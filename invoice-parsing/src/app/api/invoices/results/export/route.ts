@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import auth from '@/middleware/auth';
 import { db, logger } from '@/lib/db';
 import { Parser } from 'json2csv';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
-export const POST = auth(async (req: any) => {
+export const POST = auth(async (req) => {
   const { format, resultIds } = await req.json();
 
   if (!['json', 'csv', 'xlsx'].includes(format)) {

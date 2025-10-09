@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Settings, Database, CheckCircle, XCircle, Download, Plus, Trash2, Edit2, Play, AlertCircle, Eye } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Trash2, Play } from 'lucide-react';
 
+interface FileUploadProps {
+  schema: any;
+  onProcess: (results: any[]) => void;
+}
 
-const FileUpload = ({ schema, onProcess }) => {
-  const [files, setFiles] = useState([]);
+interface FileObject {
+  file: File;
+  id: number;
+  name: string;
+  status: string;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ schema, onProcess }) => {
+  const [files, setFiles] = useState<FileObject[]>([]);
   const [processing, setProcessing] = useState(false);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
     const newFiles = Array.from(e.target.files).map(file => ({
       file,
       id: Date.now() + Math.random(),
@@ -16,7 +28,7 @@ const FileUpload = ({ schema, onProcess }) => {
     setFiles([...files, ...newFiles]);
   };
 
-  const removeFile = (id) => {
+  const removeFile = (id: number) => {
     setFiles(files.filter(f => f.id !== id));
   };
 
@@ -24,7 +36,7 @@ const FileUpload = ({ schema, onProcess }) => {
     if (files.length === 0) return;
     
     setProcessing(true);
-    const results = [];
+    const results: any[] = [];
     
     for (let fileObj of files) {
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -32,14 +44,14 @@ const FileUpload = ({ schema, onProcess }) => {
       const mockResult = {
         fileId: fileObj.id,
         fileName: fileObj.name,
-        extractedData: {},
-        validationResults: {},
+        extractedData: {} as any,
+        validationResults: {} as any,
         status: 'completed',
         timestamp: new Date().toISOString()
       };
 
-      schema.fields.forEach(field => {
-        let mockValue;
+      schema.fields.forEach((field: any) => {
+        let mockValue: any;
         switch (field.type) {
           case 'number':
           case 'currency':
@@ -153,3 +165,5 @@ const FileUpload = ({ schema, onProcess }) => {
     </div>
   );
 };
+
+export default FileUpload;

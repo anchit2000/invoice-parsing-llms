@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Settings, Database, CheckCircle, XCircle, Download, Plus, Trash2, Edit2, Play, AlertCircle, Eye } from 'lucide-react';
+import { Download } from 'lucide-react';
 
+interface ExportButtonProps {
+  results: any[];
+  schema: any;
+}
 
-const ExportButton = ({ results, schema }) => {
-  const exportResults = (format) => {
-    let content, filename, type;
+const ExportButton: React.FC<ExportButtonProps> = ({ results, schema }) => {
+  const exportResults = (format: string) => {
+    let content: string, filename: string, type: string;
     
     if (format === 'json') {
       content = JSON.stringify(results, null, 2);
       filename = 'invoice_results.json';
       type = 'application/json';
     } else if (format === 'csv') {
-      const headers = schema.fields.map(f => f.name).join(',');
-      const rows = results.map(r => 
-        schema.fields.map(f => JSON.stringify(r.extractedData[f.name])).join(',')
+      const headers = schema.fields.map((f: any) => f.name).join(',');
+      const rows = results.map((r: any) => 
+        schema.fields.map((f: any) => JSON.stringify(r.extractedData[f.name])).join(',')
       );
       content = [headers, ...rows].join('\n');
       filename = 'invoice_results.csv';
       type = 'text/csv';
+    } else {
+      return;
     }
     
     const blob = new Blob([content], { type });
@@ -47,3 +53,5 @@ const ExportButton = ({ results, schema }) => {
     </div>
   );
 };
+
+export default ExportButton;

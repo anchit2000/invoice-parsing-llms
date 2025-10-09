@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import auth from '@/middleware/auth';
 import { db, logger } from '@/lib/db';
 
-export const GET = auth(async (req: any) => {
+export const GET = auth(async (req) => {
   const { searchParams } = new URL(req.url);
   const schemaId = searchParams.get('schemaId');
   const page = parseInt(searchParams.get('page') || '1');

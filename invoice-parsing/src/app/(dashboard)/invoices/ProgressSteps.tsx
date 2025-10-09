@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
-import { Upload, FileText, Settings, Database, CheckCircle, XCircle, Download, Plus, Trash2, Edit2, Play, AlertCircle, Eye } from 'lucide-react';
+import React from 'react';
+import { CheckCircle } from 'lucide-react';
 
+interface Step {
+  num: number;
+  name: string;
+  icon: React.ComponentType<any>;
+}
 
-const ProgressSteps = ({ currentStep, steps }) => {
+interface ProgressStepsProps {
+  currentStep: number;
+  steps: Step[];
+}
+
+const ProgressSteps: React.FC<ProgressStepsProps> = ({ currentStep, steps }) => {
   return (
     <div className="flex justify-center mb-8">
       <div className="flex items-center gap-4">
@@ -38,3 +48,5 @@ const ProgressSteps = ({ currentStep, steps }) => {
     </div>
   );
 };
+
+export default ProgressSteps;

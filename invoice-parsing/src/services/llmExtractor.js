@@ -1,6 +1,8 @@
 // services/llmExtractor.js
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
+const fs = require('fs').promises;
+const { logger } = require('../lib/db');
 
 class LLMExtractor {
   constructor() {

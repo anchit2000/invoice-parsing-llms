@@ -4,6 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { fromPath } = require('pdf2pic');
 const sharp = require('sharp');
+const { db, logger } = require('../lib/db');
 
 class PDFProcessor {
   constructor() {
@@ -26,6 +27,9 @@ class PDFProcessor {
       if (existing.rows.length > 0) {
         throw new Error('This file has already been processed');
       }
+
+      // Ensure images directory exists
+      await fs.mkdir(this.imagesDir, { recursive: true });
 
       // Convert PDF to images
       const options = {

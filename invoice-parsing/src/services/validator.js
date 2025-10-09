@@ -1,5 +1,6 @@
 // services/validator.js
 const { VM } = require('vm2');
+const { logger } = require('../lib/db');
 
 class ValidationService {
   constructor() {

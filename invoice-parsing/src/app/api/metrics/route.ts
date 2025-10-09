@@ -9,13 +9,18 @@ export const runtime = 'nodejs';
  * Returns all collected Prometheus metrics in text/plain format.
  */
 export async function GET() {
-  const metrics = await register.metrics();
+  try {
+    const metrics = await register.metrics();
 
-  return new NextResponse(metrics, {
-    status: 200,
-    headers: {
-      'Content-Type': register.contentType,
-      'Cache-Control': 'no-cache',
-    },
-  });
+    return new NextResponse(metrics, {
+      status: 200,
+      headers: {
+        'Content-Type': register.contentType,
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (error) {
+    console.error('Metrics error:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
 }

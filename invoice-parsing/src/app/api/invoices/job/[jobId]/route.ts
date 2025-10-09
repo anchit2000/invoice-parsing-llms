@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Bull from 'bull';
 import auth from '@/middleware/auth';
 import { logger } from '@/lib/db';
 
 const processingQueue = new Bull('invoice-processing', {
   redis: {
-    host: process.env.REDIS_HOST,
+    host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379')
   }
 });
 
-export const GET = auth(async (req: any, { params }: any) => {
+export const GET = auth(async (req, { params }: { params: { jobId: string } }) => {
   try {
     const { jobId } = params;
     const job = await processingQueue.getJob(jobId);

@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import auth from '@/middleware/auth';
 import { db, logger } from '@/lib/db';
 
 // ========================================
 // GET /api/invoices/results/:id
 // ========================================
-export const GET = auth(async (req: any, { params }: { params: { id: string } }) => {
+export const GET = auth(async (req, { params }: { params: { id: string } }) => {
   const { id } = params;
 
   try {
@@ -53,7 +53,7 @@ export const GET = auth(async (req: any, { params }: { params: { id: string } })
 // ========================================
 // PUT /api/invoices/results/:id
 // ========================================
-export const PUT = auth(async (req: any, { params }: { params: { id: string } }) => {
+export const PUT = auth(async (req, { params }: { params: { id: string } }) => {
   const { id } = params;
 
   try {
