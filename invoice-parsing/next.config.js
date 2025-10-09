@@ -15,6 +15,16 @@ const nextConfig = {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   },
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'coffee-script': false,
+      coffeescript: false,
+    };
+    return config;
+  }
 }
 
 module.exports = nextConfig;
+ 

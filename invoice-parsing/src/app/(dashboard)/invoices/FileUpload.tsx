@@ -50,9 +50,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ schema, onProcess }) => {
         body: formData
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Upload failed');
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Upload failed (${res.status}): ${text.slice(0, 200)}`);
+      }
+      if (!res.ok || !data?.success) {
+        throw new Error((data && data.error) || 'Upload failed');
       }
 
       // Use synchronous processed results directly

@@ -10,7 +10,7 @@ import validator from '@/services/validator';
 
 // Synchronous processing (no queue)
 
-// --- Define POST handler ---
+// // --- Define POST handler ---
 export const POST = auth(async (req) => {
   try {
     const formData = await req.formData();
