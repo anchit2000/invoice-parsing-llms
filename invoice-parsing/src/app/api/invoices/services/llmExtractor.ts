@@ -2,9 +2,12 @@
 const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs').promises;
-const { logger } = require('../lib/db');
+import { db, logger } from '@/lib/db';
 
-class LLMExtractor {
+export default class LLMExtractor {
+  openai: any;
+  anthropic: any;
+  defaultModel: string;
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
@@ -14,16 +17,16 @@ class LLMExtractor {
       apiKey: process.env.ANTHROPIC_API_KEY
     });
     
-    this.defaultModel = process.env.LLM_MODEL || 'gpt-4-vision-preview';
+    this.defaultModel = process.env.LLM_MODEL || 'gpt-4o';
   }
 
-  async extractFromInvoice(schema, imagePaths) {
+  async extractFromInvoice(schema: any, base64Images: any) {
     try {
       // Build the extraction prompt
       const prompt = this.buildExtractionPrompt(schema);
 
       // Prepare images
-      const imageMessages = await this.prepareImages(imagePaths);
+      const imageMessages = await this.prepareImages(base64Images);
 
       // Call LLM API
       let response;
@@ -52,9 +55,9 @@ class LLMExtractor {
     }
   }
 
-  buildExtractionPrompt(schema) {
+  buildExtractionPrompt(schema: { fields: any; }) {
     const fields = schema.fields;
-    const fieldDescriptions = fields.map(f => 
+    const fieldDescriptions = fields.map((f: { name: any; type: any; description: any; required: any; }) => 
       `- "${f.name}" (${f.type}): ${f.description}${f.required ? ' [REQUIRED]' : ''}`
     ).join('\n');
 
@@ -76,23 +79,21 @@ INSTRUCTIONS:
 OUTPUT FORMAT:
 Return a valid JSON object with the following structure:
 {
-  ${fields.map(f => `"${f.name}": <${f.type}_value>`).join(',\n  ')}
+  ${fields.map((f: { name: any; type: any; }) => `"${f.name}": <${f.type}_value>`).join(',\n  ')}
 }
 
 CRITICAL: Your response must be valid JSON only. Do not include any explanatory text before or after the JSON.`;
   }
 
-  async prepareImages(imagePaths) {
+  async prepareImages(base64Images: any) {
     const images = [];
     
-    for (const imgPath of imagePaths) {
-      const imageBuffer = await fs.readFile(imgPath);
-      const base64Image = imageBuffer.toString('base64');
+    for (const base64Image of base64Images) {
       images.push({
         type: 'image_url',
         image_url: {
           url: `data:image/png;base64,${base64Image}`,
-          detail: 'high'
+          detail: 'auto'
         }
       });
     }
@@ -100,7 +101,7 @@ CRITICAL: Your response must be valid JSON only. Do not include any explanatory 
     return images;
   }
 
-  async extractWithOpenAI(prompt, imageMessages) {
+  async extractWithOpenAI(prompt: string, imageMessages: { type: string; image_url: { url: string; detail: string; }; }[]) {
     const response = await this.openai.chat.completions.create({
       model: this.defaultModel,
       messages: [
@@ -120,10 +121,10 @@ CRITICAL: Your response must be valid JSON only. Do not include any explanatory 
     return response.choices[0].message.content;
   }
 
-  async extractWithClaude(prompt, imageMessages) {
+  async extractWithClaude(prompt: string, imageMessages: any[]) {
     // Convert images to Claude format
     const claudeImages = await Promise.all(
-      imageMessages.map(async (img) => {
+      imageMessages.map(async (img: { image_url: { url: string; }; }) => {
         const base64Data = img.image_url.url.split(',')[1];
         return {
           type: 'image',
@@ -154,7 +155,7 @@ CRITICAL: Your response must be valid JSON only. Do not include any explanatory 
     return response.content[0].text;
   }
 
-  parseResponse(response) {
+  parseResponse(response: string) {
     try {
       // Handle string response
       if (typeof response === 'string') {
@@ -176,20 +177,20 @@ CRITICAL: Your response must be valid JSON only. Do not include any explanatory 
     }
   }
 
-  calculateConfidence(data) {
+  calculateConfidence(data: { [s: string]: unknown; } | ArrayLike<unknown>) {
     // Simple confidence calculation based on null values
     const values = Object.values(data);
     const nonNullCount = values.filter(v => v !== null && v !== '').length;
     return nonNullCount / values.length;
   }
 
-  async retryExtraction(schema, imagePaths, maxRetries = 3) {
+  async retryExtraction(schema: any, base64Images: any, maxRetries = 3) {
     let lastError;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         logger.info(`Extraction attempt ${attempt}/${maxRetries}`);
-        return await this.extractFromInvoice(schema, imagePaths);
+        return await this.extractFromInvoice(schema, base64Images);
       } catch (error) {
         lastError = error;
         logger.warn(`Extraction attempt ${attempt} failed:`, error.message);
@@ -204,5 +205,3 @@ CRITICAL: Your response must be valid JSON only. Do not include any explanatory 
     throw new Error(`Extraction failed after ${maxRetries} attempts: ${lastError.message}`);
   }
 }
-
-module.exports = new LLMExtractor();

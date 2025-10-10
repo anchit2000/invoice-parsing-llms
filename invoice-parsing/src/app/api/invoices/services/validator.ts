@@ -1,8 +1,9 @@
 // services/validator.js
 const { VM } = require('vm2');
-const { logger } = require('../lib/db');
+import { db, logger } from '@/lib/db';
 
-class ValidationService {
+export default class ValidationService {
+  vmOptions: { timeout: number; sandbox: { console: { log: () => void; error: () => void; }; }; };
   constructor() {
     this.vmOptions = {
       timeout: 1000,
@@ -15,7 +16,7 @@ class ValidationService {
     };
   }
 
-  async validateField(fieldName, value, validationCode, fieldType) {
+  async validateField(fieldName: any, value: any, validationCode: string, fieldType: any) {
     if (!validationCode || validationCode.trim() === '') {
       return {
         fieldName,
@@ -58,7 +59,7 @@ class ValidationService {
     }
   }
 
-  coerceType(value, type) {
+  coerceType(value: string | number | Date | null | undefined, type: any) {
     if (value === null || value === undefined) return null;
 
     switch (type) {
@@ -81,8 +82,8 @@ class ValidationService {
     }
   }
 
-  async validateAllFields(extractedData, schema) {
-    const validationPromises = schema.fields.map(field => 
+  async validateAllFields(extractedData: { [x: string]: any; }, schema: { fields: any[]; }) {
+    const validationPromises = schema.fields.map((field: { name: string | number; validation: any; type: any; }) => 
       this.validateField(
         field.name,
         extractedData[field.name],
@@ -103,15 +104,13 @@ class ValidationService {
 
   // Built-in validators
   static validators = {
-    email: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-    phone: (value) => /^[\d\s\-\+\(\)]+$/.test(value),
-    url: (value) => /^https?:\/\/.+/.test(value),
-    notEmpty: (value) => value !== null && value !== undefined && String(value).trim() !== '',
-    minLength: (min) => (value) => String(value).length >= min,
-    maxLength: (max) => (value) => String(value).length <= max,
-    range: (min, max) => (value) => value >= min && value <= max,
-    pattern: (regex) => (value) => new RegExp(regex).test(value)
+    email: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+    phone: (value: string) => /^[\d\s\-\+\(\)]+$/.test(value),
+    url: (value: string) => /^https?:\/\/.+/.test(value),
+    notEmpty: (value: null | undefined) => value !== null && value !== undefined && String(value).trim() !== '',
+    minLength: (min: number) => (value: any) => String(value).length >= min,
+    maxLength: (max: number) => (value: any) => String(value).length <= max,
+    range: (min: number, max: number) => (value: number) => value >= min && value <= max,
+    pattern: (regex: string | RegExp) => (value: string) => new RegExp(regex).test(value)
   };
 }
-
-module.exports = new ValidationService();

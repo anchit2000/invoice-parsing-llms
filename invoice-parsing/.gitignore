@@ -42,3 +42,8 @@ next-env.d.ts
 
 
 *.log
+
+images/
+uploads/
+
+node_modules/
