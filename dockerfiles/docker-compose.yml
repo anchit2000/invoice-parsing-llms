@@ -8,6 +8,7 @@ services:
     stdin_open: true
     volumes:
       - pgdata:/var/lib/postgresql/data/
+      - ./db_schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
     environment:
       - POSTGRES_USER=${POSTGRES_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

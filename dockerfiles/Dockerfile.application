@@ -7,7 +7,7 @@ COPY ./invoice-parsing/package*.json ./
 
 RUN npm ci
 
-COPY . .
+COPY ./invoice-parsing .
 
 RUN npm run build
 
