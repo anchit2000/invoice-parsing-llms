@@ -11,6 +11,7 @@ dependencies = [
     "fastapi (>=0.119.0,<0.120.0)",
     "pdf2image (>=1.17.0,<2.0.0)",
     "uvicorn (>=0.37.0,<0.38.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
 ]
 
 [build-system]

@@ -1,3 +1,17 @@
+-- users table
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    api_key VARCHAR(64) UNIQUE,
+    role VARCHAR(50) DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key);
+
 -- schemas table
 CREATE TABLE IF NOT EXISTS schemas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -59,8 +73,8 @@ CREATE TABLE IF NOT EXISTS validation_logs (
     is_valid BOOLEAN NOT NULL,
     error_message TEXT,
     executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_extraction FOREIGN KEY (extraction_-- validation_logs table (continued)
-    result_id) REFERENCES extraction_results(id) ON DELETE CASCADE
+    CONSTRAINT fk_extraction FOREIGN KEY (extraction_result_id) 
+    REFERENCES extraction_results(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_validation_extraction_id ON validation_logs(extraction_result_id);
@@ -81,17 +95,3 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_audit_user_id ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_logs(created_at);
-
--- users table
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    api_key VARCHAR(64) UNIQUE,
-    role VARCHAR(50) DEFAULT 'user',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key);
