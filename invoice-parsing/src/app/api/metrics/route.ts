@@ -19,7 +19,7 @@ export async function GET() {
         'Cache-Control': 'no-cache',
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Metrics error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }

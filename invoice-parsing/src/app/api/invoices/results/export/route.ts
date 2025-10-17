@@ -53,7 +53,7 @@ export const POST = auth(async (req) => {
     });
 
     return new NextResponse(exportData, { headers });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Export error:', error);
     return NextResponse.json({ success: false, error: 'Failed to export results' }, { status: 500 });
   }

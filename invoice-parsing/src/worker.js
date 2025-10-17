@@ -82,7 +82,7 @@ processingQueue.process(CONCURRENCY, async (job) => {
     logger.info(`Job ${job.id} completed successfully`);
     return { invoiceId: invoice.id, extractionId: resultInsert.rows[0].id, validation };
     
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`Job ${job.id} failed:`, error);
     if (invoice?.id) {
       await db.query(`UPDATE invoices SET status = $1 WHERE id = $2`, ['failed', invoice.id]);

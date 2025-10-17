@@ -33,7 +33,7 @@ export const GET = auth(async (req, { params }: { params: { jobId: string } }) =
         failedReason: job.failedReason
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Job status error:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch job status' }, { status: 500 });
   }

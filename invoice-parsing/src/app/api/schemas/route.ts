@@ -26,7 +26,7 @@ export const GET = auth(async (req) => {
       success: true, 
       data: result.rows 
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Error fetching schemas:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
@@ -54,7 +54,7 @@ export const POST = auth(async (req) => {
       success: true, 
       data: result.rows[0] 
     }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ success: false, error: 'Validation error', details: error.errors }, { status: 400 });
     }

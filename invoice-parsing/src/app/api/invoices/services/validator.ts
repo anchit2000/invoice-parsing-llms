@@ -9,8 +9,8 @@ export default class ValidationService {
       timeout: 1000,
       sandbox: {
         console: {
-          log: () => {},
-          error: () => {}
+          log: () => { },
+          error: () => { }
         }
       }
     };
@@ -48,7 +48,7 @@ export default class ValidationService {
         value: typedValue
       };
 
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Validation error for field ${fieldName}:`, error);
       return {
         fieldName,
@@ -65,16 +65,27 @@ export default class ValidationService {
     switch (type) {
       case 'number':
       case 'currency':
-        const num = parseFloat(value);
+        let strValue: string;
+
+        if (typeof value === 'string') {
+          strValue = value;
+        } else if (typeof value === 'number') {
+          strValue = value.toString(); // convert number to string
+        } else {
+          // If value is Date, number/currency type shouldn't happen
+          return null;
+        }
+
+        const num = parseFloat(strValue);
         return isNaN(num) ? null : num;
-      
+
       case 'date':
         const date = new Date(value);
         return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0];
-      
+
       case 'array':
         return Array.isArray(value) ? value : String(value).split(',').map(s => s.trim());
-      
+
       case 'string':
       case 'email':
       default:
@@ -83,7 +94,7 @@ export default class ValidationService {
   }
 
   async validateAllFields(extractedData: { [x: string]: any; }, schema: { fields: any[]; }) {
-    const validationPromises = schema.fields.map((field: { name: string | number; validation: any; type: any; }) => 
+    const validationPromises = schema.fields.map((field: { name: string | number; validation: any; type: any; }) =>
       this.validateField(
         field.name,
         extractedData[field.name],
@@ -93,7 +104,7 @@ export default class ValidationService {
     );
 
     const results = await Promise.all(validationPromises);
-    
+
     return {
       results,
       allValid: results.every(r => r.isValid),

@@ -45,7 +45,7 @@ export const GET = auth(async (req) => {
       data: result.rows,
       pagination: { page, limit, total: parseInt(countResult.rows[0].count) }
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Results fetch error:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch results' }, { status: 500 });
   }

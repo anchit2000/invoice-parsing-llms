@@ -50,7 +50,7 @@ export default function auth(handler: (req: AuthenticatedRequest, context?: any)
       (req as AuthenticatedRequest).user = user as User;
       return handler(req as AuthenticatedRequest, context);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth middleware error:', error);
       // As a last resort, allow anonymous to proceed without DB lookup
       (req as any).user = { id: null, email: 'anonymous', role: 'user' };

@@ -49,7 +49,7 @@ export default class LLMExtractor {
         }
       };
 
-    } catch (error) {
+    } catch (error: any) {
       logger.error('LLM extraction error:', error);
       throw error;
     }
@@ -171,7 +171,7 @@ CRITICAL: Your response must be valid JSON only. Do not include any explanatory 
       }
       
       return response;
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Failed to parse LLM response:', error);
       throw new Error('Invalid JSON response from LLM');
     }
@@ -191,7 +191,7 @@ CRITICAL: Your response must be valid JSON only. Do not include any explanatory 
       try {
         logger.info(`Extraction attempt ${attempt}/${maxRetries}`);
         return await this.extractFromInvoice(schema, base64Images);
-      } catch (error) {
+      } catch (error: any) {
         lastError = error;
         logger.warn(`Extraction attempt ${attempt} failed:`, error.message);
         
