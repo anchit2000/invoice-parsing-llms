@@ -13,7 +13,7 @@ export default class PDFProcessor {
   constructor() {
     this.uploadDir = process.env.UPLOAD_DIR || './uploads';
     this.imageDir = process.env.IMAGE_DIR || './images';
-    this.apiUrl = process.env.PDF_API_URL || 'http://localhost:8000/pdf-to-images/';
+    this.apiUrl = process.env.PDF_API_URL || 'http://fastapi:8000/pdf-to-images/';
   }
 
   async processPDF(filePath: string) {
