@@ -38,10 +38,10 @@ export const POST = auth(async (req) => {
   }
 
   const schemaResult = await db.query(
-      'SELECT * FROM schemas WHERE id = $1 AND user_id = $2',
-      [schemaId, req.user.id]
-    );
-  
+    'SELECT * FROM schemas WHERE id = $1 AND user_id = $2',
+    [schemaId, req.user.id]
+  );
+
   if (schemaResult.rows.length === 0) {
     return NextResponse.json({ success: false, error: 'Schema not found' }, { status: 404 });
   }
@@ -49,12 +49,15 @@ export const POST = auth(async (req) => {
   const schema = schemaResult.rows[0];
   const processed: any[] = [];
 
-  
+
   // Create upload directory if it doesn't exist
   const uploadDir = process.env.UPLOAD_DIR || './uploads';
   await fs.mkdir(uploadDir, { recursive: true });
 
-  
+  // Create image directory if it doesn't exist
+  const imageDir = process.env.IMAGE_DIR || './images';
+  await fs.mkdir(imageDir, { recursive: true });
+
   for (const file of files) {
     // Generate unique filename
     const fileBuffer = await file.arrayBuffer();
@@ -63,7 +66,7 @@ export const POST = auth(async (req) => {
     const fileName = `${uniqueSuffix}${path.extname(file.name)}`;
     const filePath = path.join(process.cwd(), uploadDir, fileName);
 
-    
+
     // Save file to disk
     await fs.writeFile(filePath, Buffer.from(fileBuffer));
 
@@ -85,44 +88,44 @@ export const POST = auth(async (req) => {
     // Validation
     // const validation = await validator.validateAllFields(extraction.data, schema);
 
-  //   // Persist extraction
-  //   const resultInsert = await db.query(
-  //     `INSERT INTO extraction_results 
-  //      (invoice_id, extracted_data, validation_results, llm_model, llm_prompt_tokens, llm_completion_tokens, confidence_score)
-  //      VALUES ($1,$2,$3,$4,$5,$6,$7)
-  //      RETURNING *`,
-  //     [
-  //       invoice.id,
-  //       JSON.stringify(extraction.data),
-  //       JSON.stringify(validation),
-  //       extraction.metadata.model,
-  //       extraction.metadata.promptTokens,
-  //       extraction.metadata.completionTokens,
-  //       extraction.metadata.confidence
-  //     ]
-  //   );
+    //   // Persist extraction
+    //   const resultInsert = await db.query(
+    //     `INSERT INTO extraction_results 
+    //      (invoice_id, extracted_data, validation_results, llm_model, llm_prompt_tokens, llm_completion_tokens, confidence_score)
+    //      VALUES ($1,$2,$3,$4,$5,$6,$7)
+    //      RETURNING *`,
+    //     [
+    //       invoice.id,
+    //       JSON.stringify(extraction.data),
+    //       JSON.stringify(validation),
+    //       extraction.metadata.model,
+    //       extraction.metadata.promptTokens,
+    //       extraction.metadata.completionTokens,
+    //       extraction.metadata.confidence
+    //     ]
+    //   );
 
-  //   // Validation logs
-  //   for (const vr of validation.results) {
-  //     await db.query(
-  //       `INSERT INTO validation_logs (extraction_result_id, field_name, validation_code, is_valid, error_message)
-  //        VALUES ($1, $2, $3, $4, $5)`,
-  //       [
-  //         resultInsert.rows[0].id,
-  //         vr.fieldName,
-  //         schema.fields.find((f: any) => f.name === vr.fieldName)?.validation || null,
-  //         vr.isValid,
-  //         vr.message
-  //       ]
-  //     );
-  //   }
+    //   // Validation logs
+    //   for (const vr of validation.results) {
+    //     await db.query(
+    //       `INSERT INTO validation_logs (extraction_result_id, field_name, validation_code, is_valid, error_message)
+    //        VALUES ($1, $2, $3, $4, $5)`,
+    //       [
+    //         resultInsert.rows[0].id,
+    //         vr.fieldName,
+    //         schema.fields.find((f: any) => f.name === vr.fieldName)?.validation || null,
+    //         vr.isValid,
+    //         vr.message
+    //       ]
+    //     );
+    //   }
 
-  //   // Mark invoice complete and cleanup
-  //   await db.query(
-  //     `UPDATE invoices SET status = $1, processed_at = CURRENT_TIMESTAMP WHERE id = $2`,
-  //     ['completed', invoice.id]
-  //   );
-  //   // await pdfProcessor.cleanup(pdfData.fileHash);
+    //   // Mark invoice complete and cleanup
+    //   await db.query(
+    //     `UPDATE invoices SET status = $1, processed_at = CURRENT_TIMESTAMP WHERE id = $2`,
+    //     ['completed', invoice.id]
+    //   );
+    //   // await pdfProcessor.cleanup(pdfData.fileHash);
 
     processed.push({
       invoiceId: null,

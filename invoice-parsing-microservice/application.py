@@ -17,7 +17,9 @@ async def pdf_to_images(file: UploadFile = File(...)):
         pdf_bytes = await file.read()
 
         # Convert PDF to images (list of PIL Images)
-        images = convert_from_bytes(pdf_bytes, poppler_path=r"C:\\Users\\Thinkpad\\poppler-25.07.0\\Library\\bin")
+        images = convert_from_bytes(pdf_bytes, 
+                                    # poppler_path=r"C:\\Users\\Thinkpad\\poppler-25.07.0\\Library\\bin"
+                                    )
 
         # Convert images to base64
         base64_images = []

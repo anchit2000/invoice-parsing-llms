@@ -44,6 +44,9 @@ services:
       dockerfile: ./dockerfiles/Dockerfile.application
     container_name: nextjs
     restart: always
+    volumes:
+      - ./invoice-parsing/images:/app/images
+      - ./invoice-parsing/uploads:/app/uploads
     depends_on:
       backend:
         condition: service_started
